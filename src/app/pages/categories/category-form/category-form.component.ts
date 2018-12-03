@@ -40,6 +40,14 @@ export class CategoryFormComponent implements OnInit, AfterContentChecked {
     this.setPageTitle(); //após o carregamento de tudo, pegamos o título da página se está editando ou cadastrando
   }
 
+  submitForm(){ //envio do formulário
+    this.submittingForm = true;
+     if(this.currentAction == "new")
+      this.createCategory();
+    else // currentAction == "edit"
+      this.updateCategory();
+  }
+
   // PRIVATE METHODS
   private setCurrentAction() {
     if(this.route.snapshot.url[0].path == "new") //pegamos o primeiro seguimento da url, se for criando será new
@@ -79,6 +87,39 @@ export class CategoryFormComponent implements OnInit, AfterContentChecked {
       const categoryName = this.category.name || ""  //quando tentar setar o título da página não vai ter a categoria carregada, por isso ""
       this.pageTitle = "Editando Categoria: " + categoryName;
     }
+  }
+
+  private createCategory(){ 
+    const category: Category = Object.assign(new Category(), this.categoryForm.value); //cria um objeto de categoria e atribui os valores do formulário
+     this.categoryService.create(category)
+      .subscribe(
+        category => this.actionsForSuccess(category),
+        error => this.actionsForError(error)
+      )
+  }
+   private updateCategory(){
+    const category: Category = Object.assign(new Category(), this.categoryForm.value);
+     this.categoryService.update(category)
+      .subscribe(
+        category => this.actionsForSuccess(category),
+        error => this.actionsForError(error)
+      )
+  }
+   
+  private actionsForSuccess(category: Category){
+    toastr.success("Solicitação processada com sucesso!");
+     // redirect/reload component page. Redireciona duas vezes
+    this.router.navigateByUrl("categories", {skipLocationChange: true}).then( //skipLocationChange não armazena a navegação no histórico para não poder voltar a página, redireciona pro categories
+      () => this.router.navigate(["categories", category.id, "edit"]) //quando redirecionar para o categories, retorna para a o form com o id da categoria criada. Ex.: categories/id/edit
+    )
+  }
+   private actionsForError(error){
+    toastr.error("Ocorreu um erro ao processar a sua solicitação!");
+     this.submittingForm = false; //como deu erro não estou submentendo o formulário
+     if(error.status === 422)
+      this.serverErrorMessages = JSON.parse(error._body).errors; //devo pegar o erro de acordo com o web service
+    else
+      this.serverErrorMessages = ["Falha na comunicação com o servidor. Por favor, tente mais tarde."]
   }
 
 }
