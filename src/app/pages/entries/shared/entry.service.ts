@@ -6,26 +6,26 @@ import { map, catchError, flatMap } from "rxjs/operators";
  @Injectable({
   providedIn: 'root'
 })
-export class CategoryService {
+export class EntryService {
    private apiPath: string = "api/entries";
    constructor(private http: HttpClient) { }
    getAll(): Observable<Entry[]> {
     return this.http.get(this.apiPath).pipe(
       catchError(this.handleError),
-      map(this.jsonDataToCategories)
+      map(this.jsonDataToEntries)
     )
   }
    getById(id: number): Observable<Entry> {
     const url = `${this.apiPath}/${id}`;
      return this.http.get(url).pipe(
       catchError(this.handleError),
-      map(this.jsonDataToCategory)
+      map(this.jsonDataToEntry)
     )
   }
    create(entry: Entry): Observable<Entry> {
     return this.http.post(this.apiPath, entry).pipe(
       catchError(this.handleError),
-      map(this.jsonDataToCategory)
+      map(this.jsonDataToEntry)
     )
   }
    update(entry: Entry): Observable<Entry> {
@@ -43,13 +43,21 @@ export class CategoryService {
     )
   }
    // PRIVATE METHODS
-   private jsonDataToCategories(jsonData: any[]): Entry[] {
+   private jsonDataToEntries(jsonData: any[]): Entry[] {
     const entries: Entry[] = [];
-    jsonData.forEach(element => entries.push(element as Entry));
+    
+    //o cast não transforma para um objeto do tipo entry
+    //Object.assign cria um objeto do tipo Entry e atribui valores a ele com a variável element
+    //Agora com objeto do tipo Entry, tenho acesso a classe entry e seus métodos
+    jsonData.forEach(element => { 
+      const entry = Object.assign(new Entry(), element);
+      entries.push(entry);      
+    });
+
     return entries;
   }
-   private jsonDataToCategory(jsonData: any): Entry {
-    return jsonData as Entry;
+   private jsonDataToEntry(jsonData: any): Entry {
+    return Object.assign(new Entry(), jsonData);
   }
    private handleError(error: any): Observable<any>{
     console.log("ERRO NA REQUISIÇÃO => ", error);
